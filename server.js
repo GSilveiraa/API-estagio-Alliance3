@@ -4,7 +4,6 @@ const port = 3000;
 const mongoose = require('mongoose');
 const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://gabrielsilveira2505_db_user:54123@cluster0.8o5q2jl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const Produto = require("./models/Produto");
-const produtos = require('./produtos.json')
 
 app.use(express.json());
 
@@ -27,12 +26,19 @@ app.get("/produtos", async (req, res) => {
 app.post("/produtos", async (req, res) => {
     try {
         const novo = new Produto(req.body);
+        await novo.validate();
         await novo.save();
         res.status(201).json(novo);
     } catch (err) {
-        res.status(400).json({ error: "Erro na criação do produto", details: err.message });
+        if (err.name === 'ValidationError') {
+            res.status(400).json({ error: "Dados inválidos", details: err.erros});
+        } else {
+            res.status(500).json({ error: "Erro interno do servidor"});
+        }
     }
 });
+
+module.exports = app;
 
 app.get('/', (req, res) => {
     res.send('Bem Vindo a API exemplo!')
